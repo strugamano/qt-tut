@@ -1,3 +1,5 @@
+# https://doc.qt.io/qtforpython-6/quickstart.html
+
 import sys
 import random
 from PySide6 import QtCore, QtWidgets

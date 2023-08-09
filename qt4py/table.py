@@ -1,3 +1,5 @@
+# https://doc.qt.io/qtforpython-6/tutorials/basictutorial/tablewidget.html
+
 import sys
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QApplication, QTableWidget, QTableWidgetItem)

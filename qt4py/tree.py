@@ -1,3 +1,5 @@
+# https://doc.qt.io/qtforpython-6/tutorials/basictutorial/treewidget.html
+
 import sys
 from PySide6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
 
