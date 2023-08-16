@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # window properties
-        self.setWindowTitle("My App")
+        self.setWindowTitle("signals")
         self.setFixedSize(QSize(400, 300))
 
         self.windowTitleChanged.connect(self.the_window_title_changed)
