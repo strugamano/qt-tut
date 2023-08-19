@@ -15,3 +15,17 @@ The code was written and tested on Manjaro Linux, so any Linux distribution with
 The code should *somewhat* work on Windows as well, you can find installation guides through the links above.
 
 You will need the [pip](https://packaging.python.org/en/latest/tutorials/installing-packages/) python package manager to set up [pyside6](https://pypi.org/project/PySide6/).
+
+### earthquakes
+
+## todo
+
+### earthquakes v0.25
+
+- insert usgs banner
+- add toolbar options
+  - exit, about
+  - open details: dialog & usgs site
+- tweak status bar >> dValue class added: emits signal when variable value is changed
+- ListWidget header, sorting
+- update howto

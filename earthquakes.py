@@ -7,6 +7,7 @@ Earthquake data provided by USGS, accessed through API
 The GEOJson data format:
 
     https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
+    https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson_detail.php
     https://geojson.org/
     https://geojson.io/#map=5.76/46.624/19.405
 
@@ -24,12 +25,12 @@ Data visualization:
 
 import sys, requests, time
 
-from PySide6.QtCore import Qt, QSize, QDate, Slot
+from PySide6.QtCore import Qt, QSize, QDate, Signal, Slot
 from PySide6.QtGui import QAction, QIcon, QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QWidget, QMainWindow, 
     QVBoxLayout, QGridLayout, 
-    QStatusBar, QToolBar, QLabel, QDoubleSpinBox, QDateEdit, QTextBrowser)
+    QStatusBar, QToolBar, QLabel, QDoubleSpinBox, QDateEdit, QListWidget)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -43,6 +44,9 @@ class MainWindow(QMainWindow):
     # STATUSBAR
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
+        self.quake_count = dValue()
+        self.quake_count.v = 0
+        self.quake_count.changed.connect(lambda value: self.update_statusbar(value, "quakes listed."))
         
     # TOOLBAR
         toolbar = QToolBar("main toolbar")
@@ -107,21 +111,24 @@ class MainWindow(QMainWindow):
         layout.addLayout(filters_layout)
 
     # DATA
-        self.data = QTextBrowser()
-        self.data.setReadOnly(True)
+        self.data = QListWidget()
+        """ self.data.setReadOnly(True)
         self.data.setOpenExternalLinks(True)
         self.data.setOpenLinks(False)
-        self.data.anchorClicked.connect(QDesktopServices.openUrl)
+        self.data.anchorClicked.connect(QDesktopServices.openUrl) """
+        self.data.setSortingEnabled(True)
+        self.data.currentItemChanged.connect(self.open_quake_details)
         layout.addWidget(self.data)
+        self.quakes = []
         
     # test query: api version
-        """ try:
+        try:
             api_endpoint = "version"
             version = requests.get(api_url + api_endpoint).text
             print("USGS API version:", version)
             self.status_bar.showMessage("USGS API version: " + version)
-            self.data.setText("USGS API version: " + version)
-        except ConnectionError as err: print("Connection error:", err) """
+            #self.data.setText("USGS API version: " + version)
+        except ConnectionError as err: print("Connection error:", err)
 
     # CONTAINER
         container = QWidget()
@@ -129,7 +136,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     @Slot()
-    def queryAction(self, s):
+    def update_statusbar(self, value, text): self.status_bar.showMessage(f"{value} {text}")
+
+    @Slot()
+    def queryAction(self):
         min = f"{self.min_magnitude_spinbox.value():.1f}"
         max = f"{self.max_magnitude_spinbox.value():.1f}"
         start = f"{self.start_date.date().year()}-{self.start_date.date().month()}-{self.start_date.date().day()}"
@@ -138,18 +148,30 @@ class MainWindow(QMainWindow):
         
         print(f"filters - min: {min} max: {max} start: {start} end: {end}")
         print(f"query: {api_url}{api_endpoint}")
-        self.data.setText(f"filters - min: {min} max: {max} start: {start} end: {end} query: <a href='{api_url}{api_endpoint}'>url</a>")
+        #self.data.setText(f"filters - min: {min} max: {max} start: {start} end: {end} query: <a href='{api_url}{api_endpoint}'>url</a>")
         
-        self.status_bar.showMessage("Start query...")        
         data = requests.get(api_url + api_endpoint).json()
-        print(f"{data['metadata']['count']} quakes")
+        self.quakes = []
         for quake in data['features']:
             props = quake['properties']
             datetime = time.strftime("%y-%m-%d %H:%M:%S", time.gmtime(int(props['time']/1000)))
-            self.data.append(f"{datetime} - {props['mag']} - {props['place']} - <a href='{props['url']}'>url</a>")
-        
-        print("Done.")
-        self.status_bar.showMessage(f"{data['metadata']['count']} quakes listed.") # TODO status bar
+            label = f"{datetime} - {props['mag']} - {quake['geometry']['coordinates'][2]:.1f} kms - {props['place']}"
+            self.quakes.append({
+                'id': quake['id'],
+                'label': label,
+                'datetime': datetime,
+                'props': props,
+                'geometry': quake['geometry']
+            })
+            self.data.addItem(label)
+
+        self.quake_count.v = data['metadata']['count']
+        print(f"{data['metadata']['count']} quakes. Done.")
+
+    @Slot()
+    def open_quake_details(self):
+        quake = self.quakes[len(self.quakes) - self.data.currentRow() - 1]
+        print(f"open quake details: {quake['label']} - id: {quake['id']}")
 
     @Slot()
     def min_magnitude_spinbox_value_changed(self, value):
@@ -172,6 +194,22 @@ class MainWindow(QMainWindow):
         date = f"{self.end_date.date().year()}-{self.end_date.date().month()}-{self.end_date.date().day()}"
         print(f"end date: {date}")
         self.end_date_label.setText(f"end date: {date}")
+
+class dValue(QWidget):
+    changed = Signal(int)
+
+    def __init__(self, parent=None):
+        super(dValue, self).__init__(parent)
+        self._v = 0
+
+    @property
+    def v(self):
+        return self._v
+
+    @v.setter
+    def v(self, value):
+        self._v = value
+        self.changed.emit(value)
 
 
 api_url = "https://earthquake.usgs.gov/fdsnws/event/1/"
