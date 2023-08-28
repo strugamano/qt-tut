@@ -23,9 +23,11 @@ You will need the [pip](https://packaging.python.org/en/latest/tutorials/install
 ### earthquakes v0.25
 
 - insert usgs banner
+- increase window size, add details widget next to the quake list
 - add toolbar options
-  - exit, about
-  - open details: dialog & usgs site
+  - about
+  - open details: usgs site
+    - repurpose 'Open details' button to open usgs site and 'show_quake_details' for the widget next to the list
 - tweak status bar >> dValue class added: emits signal when variable value is changed
 - ListWidget header, sorting
 - update howto
